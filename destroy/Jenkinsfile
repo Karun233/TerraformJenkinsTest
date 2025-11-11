@@ -56,19 +56,18 @@ pipeline {
                 '''
             }
         }
-        stage('Terraform Plan') {
+        stage('Approval') {
             steps {
-                sh '''
-                echo "Generating Terraform plan..."
-                terraform plan -out=tfplan
-                '''
+                script {
+                    input message: "Do you approve destroying resources managed by Terraform?", ok: "Yes, Proceed"
+                }
             }
         }
-        stage('Terraform Apply') {
+        stage('Terraform Destroy') {
             steps {
                 sh '''
-                echo "Applying Terraform configuration..."
-                terraform apply -auto-approve tfplan
+                echo "Destroying Terraform-managed infrastructure..."
+                terraform destroy -auto-approve
                 '''
             }
         }
@@ -78,11 +77,10 @@ pipeline {
             archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
         }
         success {
-            echo 'Resources created successfully!'
+            echo 'Resources destroyed successfully!'
         }
         failure {
             echo 'Pipeline failed. Please check the logs.'
         }
     }
 }
-
